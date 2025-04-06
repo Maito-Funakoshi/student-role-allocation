@@ -238,14 +238,17 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
     );
   });
 
+  let IdIndex = 0;
+
   // Convert assignments to result format
   const result: Assignment[] = assignments.map(([studentIndex, roleIndex]) => {
+    IdIndex += 1;
     const student = validPreferences[studentIndex];
     const role = availableRoles[roleIndex];
     const preferenceRank = student.preferences.indexOf(role.id) + 1 || 0;
 
     return {
-      userId: student.userId,
+      userId: student.userId + "-" + String(IdIndex),
       userName: student.userName,
       roleId: role.id,
       roleName: role.title,
