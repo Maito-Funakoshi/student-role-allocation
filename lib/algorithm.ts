@@ -10,15 +10,46 @@ export function allocateRoles(preferences: Preference[], managedRoles: typeof ro
   }, new Map<string, Preference>());
 
   const validPreferences = Array.from(uniquePreferences.values());
-  // Shuffle the array of valid preferences
-  for (let i = validPreferences.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [validPreferences[i], validPreferences[j]] = [validPreferences[j], validPreferences[i]];
+
+  const trialCount = 50; // 約30以上であれば満足度のminが動かなくなる感触
+  let bestResult: AllocationResult | null = null;
+  let bestSatisfactionScore = Infinity;
+
+  console.log(`=== ${trialCount}回の役職割り振りを実行して最良の結果を選びます ===`);
+
+  for (let trial = 1; trial <= trialCount; trial++) {
+    console.log(`\n--- 試行 ${trial}/${trialCount} ---`);
+
+    // 各試行でvalidPreferencesをシャッフル
+    const shuffledPreferences = [...validPreferences];
+    for (let i = shuffledPreferences.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledPreferences[i], shuffledPreferences[j]] = [shuffledPreferences[j], shuffledPreferences[i]];
+    }
+
+    // 各試行で役職割り当てを実行
+    const result = performAllocation(shuffledPreferences, managedRoles);
+    console.log(`試行 ${trial} の満足度スコア: ${result.satisfactionScore.toFixed(2)}`);
+
+    // 最良の結果を保存
+    if (result.satisfactionScore < bestSatisfactionScore) {
+      bestResult = result;
+      bestSatisfactionScore = result.satisfactionScore;
+      console.log(`★ 新しい最良スコアを発見: ${bestSatisfactionScore.toFixed(2)}`);
+    }
   }
 
+  console.log("\n=== 最終結果 ===");
+  console.log(`最良の満足度スコア: ${bestSatisfactionScore.toFixed(2)}`);
+
+  return bestResult!;
+}
+
+// 元のallocateRolesの内部ロジックを分離した関数
+function performAllocation(validPreferences: Preference[], managedRoles: typeof roles): AllocationResult {
   // Debug: Log initial state
   console.log("=== 配分アルゴリズム開始 ===");
-  console.log(`学生数: ${validPreferences.length}`);
+  // console.log(`学生数: ${validPreferences.length}`);
   console.log(
     "学生の希望:",
     validPreferences.map((p) => ({
@@ -40,8 +71,7 @@ export function allocateRoles(preferences: Preference[], managedRoles: typeof ro
   );
 
   // Debug: Log available roles
-  console.log("\n利用可能な　役職:");
-  console.log(availableRoles.map((r) => `${r.title} (${r.instanceId})`));
+  console.log("\n利用可能な　役職:", availableRoles.map((r) => `${r.title} (${r.instanceId})`));
 
   // Calculate total roles needed to be filled
   const totalRoleSlots = availableRoles.length;
@@ -234,14 +264,14 @@ export function allocateRoles(preferences: Preference[], managedRoles: typeof ro
   const assignments = assignRoles();
 
   // Debug: Log assignments
-  console.log("\n配分結果（学生 → 役職）:");
-  assignments.forEach(([studentIndex, roleIndex]) => {
-    const student = validPreferences[studentIndex];
-    const role = availableRoles[roleIndex];
-    console.log(
-      `${student.userName} → ${role.title} (コスト: ${costs[studentIndex][roleIndex]})`
-    );
-  });
+  // console.log("\n配分結果（学生 → 役職）:");
+  // assignments.forEach(([studentIndex, roleIndex]) => {
+  //   const student = validPreferences[studentIndex];
+  //   const role = availableRoles[roleIndex];
+  //   console.log(
+  //     `${student.userName} → ${role.title} (コスト: ${costs[studentIndex][roleIndex]})`
+  //   );
+  // });
 
   let IdIndex = 0;
 
@@ -285,7 +315,7 @@ export function allocateRoles(preferences: Preference[], managedRoles: typeof ro
 
   // Count and check roles per student for reporting
   const rolesPerStudent = validPreferences.map(student => {
-    const studentAssignments = result.filter(a => a.userId === student.userId);
+    const studentAssignments = result.filter(a => a.userId.startsWith(student.userId + "-"));
     const roleIds = new Set(studentAssignments.map(a => a.roleId));
 
     // Verify no duplicate role assignments
@@ -303,10 +333,10 @@ export function allocateRoles(preferences: Preference[], managedRoles: typeof ro
   // Debug: Log final results
   console.log("\n=== 配分結果 ===");
   console.log(`配分された役職の総数: ${result.length}`);
-  console.log(`各学生の役職数:`);
-  rolesPerStudent.forEach(({ name, count, distinctRoles }) => {
-    console.log(`- ${name}: ${count}個の役職 (異なる役職: ${distinctRoles})`);
-  });
+  // console.log(`各学生の役職数:`);
+  // rolesPerStudent.forEach(({ name, count, distinctRoles }) => {
+  //   console.log(`- ${name}: ${count}個の役職 (異なる役職: ${distinctRoles})`);
+  // });
 
   console.log(`未配分の役職数: ${unassignedRoleIds.size}`);
   console.log(`満足度スコア: ${satisfactionScore.toFixed(2)}`);

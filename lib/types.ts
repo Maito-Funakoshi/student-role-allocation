@@ -34,4 +34,3 @@ export interface AllocationResult {
   unassignedRoles: string[]
   satisfactionScore: number // A measure of how well preferences were satisfied
 }
-

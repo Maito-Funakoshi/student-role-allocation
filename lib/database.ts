@@ -10,7 +10,7 @@ export const getAdminEmails = async () => {
 
 export const addAdminEmail = async (email: string) => {
   const normalizedEmail = email.trim().toLowerCase()
-  await setDoc(doc(db, "adminEmails", normalizedEmail), { 
+  await setDoc(doc(db, "adminEmails", normalizedEmail), {
     email: normalizedEmail,
     timestamp: new Date()
   })
@@ -111,13 +111,13 @@ export const deleteRole = async (roleId: string) => {
 
 export const initializeRolesIfEmpty = async (defaultRoles: Role[]) => {
   const roles = await getAllRoles()
-  
+
   if (roles.length === 0) {
     // If no roles exist in the database, initialize with default roles
     const savePromises = defaultRoles.map(role => saveRole(role))
     await Promise.all(savePromises)
     return defaultRoles
   }
-  
+
   return roles
 }

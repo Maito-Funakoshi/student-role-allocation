@@ -33,7 +33,7 @@ export default function Admin() {
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [envAdminEmails, setEnvAdminEmails] = useState<string[]>([]);
-  
+
   // Role management state
   const [managedRoles, setManagedRoles] = useState<typeof roles>([]);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
@@ -63,7 +63,7 @@ export default function Admin() {
         // Get environment admin emails
         const envEmails = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.split(",") || [];
         setEnvAdminEmails(envEmails.map(email => email.trim()));
-        
+
         // Load roles from database
         const rolesData = await getAllRoles();
         setManagedRoles(rolesData);
@@ -77,30 +77,30 @@ export default function Admin() {
 
     loadData();
   }, []);
-  
+
   // Role management handlers
   const handleAddRole = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     // Validate role data
     if (!newRole.id || !newRole.title || !newRole.description || newRole.capacity < 1) {
       setError("すべてのフィールドを入力してください。定員は1以上の数値である必要があります。");
       return;
     }
-    
+
     // Check if ID already exists
     if (managedRoles.some(role => role.id === newRole.id)) {
       setError("同じIDの役職が既に存在します。");
       return;
     }
-    
+
     try {
       // Save to database
       await saveRole(newRole);
-      
+
       // Update local state
       setManagedRoles([...managedRoles, newRole]);
-      
+
       // Reset form
       setNewRole({
         id: "",
@@ -108,32 +108,32 @@ export default function Admin() {
         description: "",
         capacity: 1
       });
-      
+
       setSuccess("役職を追加しました");
     } catch (error) {
       console.error("Error adding role:", error);
       setError("役職の追加に失敗しました");
     }
   };
-  
+
   const handleUpdateRole = async (roleId: string, updatedData: Partial<typeof newRole>) => {
     try {
       const roleIndex = managedRoles.findIndex(r => r.id === roleId);
       if (roleIndex === -1) return;
-      
+
       const updatedRole = {
         ...managedRoles[roleIndex],
         ...updatedData
       };
-      
+
       // Save to database
       await saveRole(updatedRole);
-      
+
       // Update local state
       const updatedRoles = [...managedRoles];
       updatedRoles[roleIndex] = updatedRole;
       setManagedRoles(updatedRoles);
-      
+
       setEditingRoleId(null);
       setSuccess("役職を更新しました");
     } catch (error) {
@@ -141,7 +141,7 @@ export default function Admin() {
       setError("役職の更新に失敗しました");
     }
   };
-  
+
   const handleDeleteRole = async (roleId: string) => {
     // Check if role is currently assigned to any user
     const isAssigned = assignments.some(a => a.roleId === roleId);
@@ -149,14 +149,14 @@ export default function Admin() {
       setError("この役職は現在割り当てられているため削除できません。");
       return;
     }
-    
+
     try {
       // Delete from database
       await deleteRole(roleId);
-      
+
       // Update local state
       setManagedRoles(managedRoles.filter(r => r.id !== roleId));
-      
+
       setSuccess("役職を削除しました");
     } catch (error) {
       console.error("Error deleting role:", error);
@@ -311,7 +311,7 @@ export default function Admin() {
         `配分された学生数: ${result.assignments.length}人`,
         `未配分の学生数: ${result.unassignedUsers.length}人`,
         `未配分の役職数: ${result.unassignedRoles.length}個`,
-        `満足度スコア: ${result.satisfactionScore.toFixed(2)}`,
+        `満足度スコア: ${result.satisfactionScore.toFixed(2)} （値が小さいほど良い）`,
         ``,
         `※コンソールに詳細なデバッグ情報を出力しています。`,
       ].join("\n");
@@ -402,7 +402,12 @@ export default function Admin() {
 
             {success && (
               <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-                {success}
+                {success.split('\n').map((line, index) => (
+                  <div key={index}>
+                    {line}
+                    {index < success.split('\n').length - 1 && <br />}
+                  </div>
+                ))}
               </div>
             )}
 
@@ -439,9 +444,12 @@ export default function Admin() {
             </div>
 
             <div className="mb-8">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">
+              <h2 className="text-lg font-medium text-gray-900">
                 役職の配分結果 ({assignments.length})
               </h2>
+              <p className="mt-1 max-w-2xl text-xs text-gray-500 mb-4">
+                再読み込みすると整理されます
+              </p>
 
               {assignments.length === 0 ? (
                 <p className="text-gray-500 italic">
@@ -480,8 +488,8 @@ export default function Admin() {
                           </td>
                           <td
                             className={`px-6 py-4 whitespace-nowrap text-sm ${roleConflicts[assignment.roleId]
-                                ? "bg-red-50"
-                                : ""
+                              ? "bg-red-50"
+                              : ""
                               }`}
                           >
                             <select
@@ -627,7 +635,7 @@ export default function Admin() {
                                   className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
                                 />
                               ) : (
-                                <div 
+                                <div
                                   className="cursor-pointer hover:text-blue-600"
                                   onClick={() => setEditingRoleId(role.id)}
                                 >
@@ -652,7 +660,7 @@ export default function Admin() {
                                   rows={3}
                                 />
                               ) : (
-                                <div 
+                                <div
                                   className="cursor-pointer hover:text-blue-600 max-w-md truncate"
                                   onClick={() => setEditingRoleId(role.id)}
                                   title={role.description}
@@ -680,7 +688,7 @@ export default function Admin() {
                                   className="block w-20 py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm"
                                 />
                               ) : (
-                                <div 
+                                <div
                                   className="cursor-pointer hover:text-blue-600"
                                   onClick={() => setEditingRoleId(role.id)}
                                 >

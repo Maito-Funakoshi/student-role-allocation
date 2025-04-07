@@ -31,8 +31,8 @@ interface AuthProviderProps {
 const defaultContext: AuthContextType = {
   user: null,
   loading: true,
-  signInWithGoogle: async () => {},
-  signOut: async () => {},
+  signInWithGoogle: async () => { },
+  signOut: async () => { },
 };
 
 const AuthContext = createContext<AuthContextType>(defaultContext);
@@ -51,15 +51,15 @@ export const AuthProvider = ({
         // Get additional user data from Firestore
         const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
         const userData = userDoc.data();
-        
+
         // Get admin emails from database
         const dbAdminEmails = await getAdminEmails();
-        
+
         // Check if user is admin from env or database
         const isEnvAdmin = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.split(",").includes(
           firebaseUser.email || ""
         ) ?? false;
-        
+
         const isDbAdmin = dbAdminEmails.includes(firebaseUser.email || "");
 
         setUser({
@@ -89,12 +89,12 @@ export const AuthProvider = ({
 
       // Get admin emails from database
       const dbAdminEmails = await getAdminEmails();
-      
+
       // Check if this is the admin email from env or database
       const isEnvAdmin = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.split(",").includes(
         user.email || ""
       ) ?? false;
-      
+
       const isDbAdmin = dbAdminEmails.includes(user.email || "");
       const isAdmin = isEnvAdmin || isDbAdmin;
 

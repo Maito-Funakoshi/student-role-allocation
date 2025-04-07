@@ -32,4 +32,3 @@ export const devSignInWithGoogle = async (email: string, displayName: string) =>
     isAdmin,
   }
 }
-

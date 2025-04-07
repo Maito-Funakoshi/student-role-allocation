@@ -51,4 +51,3 @@ export default function GoogleSignInButton({ onClick, text }: GoogleSignInButton
     </button>
   )
 }
-

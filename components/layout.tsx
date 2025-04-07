@@ -96,44 +96,40 @@ export default function Layout({ children }: LayoutProps) {
                 <nav className="ml-0 sm:ml-6 flex space-x-8 relative">
                   <Link
                     href="/"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap ${
-                      pathname === "/"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap ${pathname === "/"
                         ? "border-gray-900 text-gray-900"
                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
+                      }`}
                   >
                     Home
                   </Link>
                   {user && (
                     <Link
                       href="/preferences"
-                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap ${
-                        pathname === "/preferences"
+                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap ${pathname === "/preferences"
                           ? "border-gray-900 text-gray-900"
                           : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
+                        }`}
                     >
                       Preferences
                     </Link>
                   )}
                   <Link
                     href="/results"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap ${
-                      pathname === "/results"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap ${pathname === "/results"
                         ? "border-gray-900 text-gray-900"
                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
+                      }`}
                   >
                     Results
                   </Link>
                   {user?.isAdmin && (
                     <Link
                       href="/admin"
-                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap ${
-                        pathname === "/admin"
+                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap ${pathname === "/admin"
                           ? "border-gray-900 text-gray-900"
                           : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
+                        }`}
                     >
                       Admin
                     </Link>
