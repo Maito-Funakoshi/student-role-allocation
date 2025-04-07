@@ -2,7 +2,7 @@ import type { Preference, Assignment, AllocationResult } from "./types";
 import { roles } from "./roles";
 
 // Minimum Cost Flow Algorithm for role allocation with multiple assignments per student
-export function allocateRoles(preferences: Preference[]): AllocationResult {
+export function allocateRoles(preferences: Preference[], managedRoles: typeof roles): AllocationResult {
   // Remove duplicate students by taking the latest preference
   const uniquePreferences = preferences.reduce((acc, curr) => {
     acc.set(curr.userId, curr);
@@ -10,6 +10,11 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
   }, new Map<string, Preference>());
 
   const validPreferences = Array.from(uniquePreferences.values());
+  // Shuffle the array of valid preferences
+  for (let i = validPreferences.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [validPreferences[i], validPreferences[j]] = [validPreferences[j], validPreferences[i]];
+  }
 
   // Debug: Log initial state
   console.log("=== 配分アルゴリズム開始 ===");
@@ -19,13 +24,13 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
     validPreferences.map((p) => ({
       name: p.userName,
       preferences: p.preferences.map(
-        (roleId) => roles.find((r) => r.id === roleId)?.title || roleId
+        (roleId) => managedRoles.find((r) => r.id === roleId)?.title || roleId
       ),
     }))
   );
 
   // Create a copy of roles with their capacities
-  const availableRoles = roles.flatMap((role) =>
+  const availableRoles = managedRoles.flatMap((role) =>
     Array(role.capacity)
       .fill(null)
       .map((_, index) => ({
@@ -35,26 +40,26 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
   );
 
   // Debug: Log available roles
-  console.log("\n利用可能な役割:");
+  console.log("\n利用可能な　役職:");
   console.log(availableRoles.map((r) => `${r.title} (${r.instanceId})`));
 
   // Calculate total roles needed to be filled
   const totalRoleSlots = availableRoles.length;
-  
+
   // Calculate minimum required roles per student
   // If there are more roles than students, some students must take multiple roles
   const minRolesPerStudent = Math.floor(totalRoleSlots / validPreferences.length);
   const extraRoles = totalRoleSlots % validPreferences.length;
-  
-  console.log(`\n各学生の最低役割数: ${minRolesPerStudent}`);
-  console.log(`追加で割り当てる必要のある役割数: ${extraRoles}`);
+
+  console.log(`\n各学生の最低役職数: ${minRolesPerStudent}`);
+  console.log(`追加で割り当てる必要のある役職数: ${extraRoles}`);
 
   // Initialize cost matrix
   const numStudents = validPreferences.length;
   const numRoles = availableRoles.length;
   const costs: number[][] = Array(numStudents)
     .fill(0)
-    .map(() => Array(numRoles).fill(roles.length + 1)); // Default cost is number of roles + 1
+    .map(() => Array(numRoles).fill(managedRoles.length + 1)); // Default cost is number of managedRoles + 1
 
   // Fill in costs based on preferences
   validPreferences.forEach((student, studentIndex) => {
@@ -81,7 +86,7 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
     const studentAssignmentCount = new Array(numStudents).fill(0);
     // Track which base role IDs each student has been assigned to
     const studentAssignedRoleIds = Array(numStudents).fill(null).map(() => new Set<string>());
-    
+
     // Sort all possible assignments by cost
     const allPossibleAssignments: [number, number, number][] = [];
     for (let i = 0; i < numStudents; i++) {
@@ -90,27 +95,27 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
       }
     }
     allPossibleAssignments.sort((a, b) => a[2] - b[2]);
-    
+
     // First pass: assign at least minRolesPerStudent to each student
     // Iterate through all possible assignments sorted by cost
     for (const [studentIndex, roleIndex, cost] of allPossibleAssignments) {
       // Skip if the role is already assigned
       if (usedRoles.has(roleIndex)) continue;
-      
+
       // Skip if the student already has minimum required roles assigned
       if (studentAssignmentCount[studentIndex] >= minRolesPerStudent) continue;
-      
+
       // Skip if the student is already assigned to this role type
       const baseRoleId = availableRoles[roleIndex].id;
       if (studentAssignedRoleIds[studentIndex].has(baseRoleId)) continue;
-      
+
       // Make the assignment
       assignments.push([studentIndex, roleIndex]);
       usedRoles.add(roleIndex);
       studentAssignmentCount[studentIndex]++;
       studentAssignedRoleIds[studentIndex].add(baseRoleId);
     }
-    
+
     // Second pass: distribute extra roles
     // Sort students by current average cost to prioritize those with worse assignments
     const studentAverageCosts: [number, number][] = studentAssignmentCount.map(
@@ -119,44 +124,44 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
         const studentAssignments = assignments.filter(
           ([sIndex]) => sIndex === studentIndex
         );
-        
-        const averageCost = studentAssignments.length > 0 
+
+        const averageCost = studentAssignments.length > 0
           ? studentAssignments.reduce(
-              (sum, [sIndex, rIndex]) => sum + costs[sIndex][rIndex], 
-              0
-            ) / studentAssignments.length
+            (sum, [sIndex, rIndex]) => sum + costs[sIndex][rIndex],
+            0
+          ) / studentAssignments.length
           : 0;
-          
+
         return [studentIndex, averageCost];
       }
     );
-    
+
     // Sort by average cost (descending) so students with worse assignments get priority
     studentAverageCosts.sort((a, b) => b[1] - a[1]);
-    
+
     // Distribute extra roles by student priority
     let extraRolesAssigned = 0;
     while (extraRolesAssigned < extraRoles) {
       // Get next student in priority queue
       const [priorityStudentIndex] = studentAverageCosts[extraRolesAssigned % numStudents];
-      
+
       // Find best available role for this student that they haven't already been assigned to
       let bestRoleIndex = -1;
       let bestCost = Infinity;
-      
+
       for (let roleIndex = 0; roleIndex < numRoles; roleIndex++) {
         if (!usedRoles.has(roleIndex)) {
           const baseRoleId = availableRoles[roleIndex].id;
           // Skip if student already has this role type
           if (studentAssignedRoleIds[priorityStudentIndex].has(baseRoleId)) continue;
-          
+
           if (costs[priorityStudentIndex][roleIndex] < bestCost) {
             bestRoleIndex = roleIndex;
             bestCost = costs[priorityStudentIndex][roleIndex];
           }
         }
       }
-      
+
       // Assign the best available role
       if (bestRoleIndex !== -1) {
         assignments.push([priorityStudentIndex, bestRoleIndex]);
@@ -170,7 +175,7 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
         continue;
       }
     }
-    
+
     // Third pass: Ensure all roles are assigned
     // First try to assign remaining roles to students who don't have that role type yet
     for (let roleIndex = 0; roleIndex < numRoles; roleIndex++) {
@@ -178,21 +183,21 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
         const baseRoleId = availableRoles[roleIndex].id;
         let bestStudentIndex = -1;
         let bestScore = -Infinity;
-        
+
         // Find eligible student with lowest assignment count and best preference
         for (let studentIndex = 0; studentIndex < numStudents; studentIndex++) {
           // Skip if student already has this role type
           if (studentAssignedRoleIds[studentIndex].has(baseRoleId)) continue;
-          
+
           // Score based on assignment count (fewer is better) and preference (lower cost is better)
           const assignmentScore = -studentAssignmentCount[studentIndex] * 100 - costs[studentIndex][roleIndex];
-          
+
           if (assignmentScore > bestScore) {
             bestStudentIndex = studentIndex;
             bestScore = assignmentScore;
           }
         }
-        
+
         // If we found an eligible student
         if (bestStudentIndex !== -1) {
           assignments.push([bestStudentIndex, roleIndex]);
@@ -201,19 +206,19 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
           studentAssignedRoleIds[bestStudentIndex].add(baseRoleId);
           continue;
         }
-        
+
         // If no eligible student (all already have this role type),
         // relax the constraint and assign to the student with fewest assignments
         let minAssignedStudent = 0;
         let minAssignmentCount = studentAssignmentCount[0];
-        
+
         for (let i = 1; i < numStudents; i++) {
           if (studentAssignmentCount[i] < minAssignmentCount) {
             minAssignedStudent = i;
             minAssignmentCount = studentAssignmentCount[i];
           }
         }
-        
+
         assignments.push([minAssignedStudent, roleIndex]);
         usedRoles.add(roleIndex);
         studentAssignmentCount[minAssignedStudent]++;
@@ -229,7 +234,7 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
   const assignments = assignRoles();
 
   // Debug: Log assignments
-  console.log("\n配分結果（学生 → 役割）:");
+  console.log("\n配分結果（学生 → 役職）:");
   assignments.forEach(([studentIndex, roleIndex]) => {
     const student = validPreferences[studentIndex];
     const role = availableRoles[roleIndex];
@@ -263,9 +268,9 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
     const roleId = availableRoles[roleIndex].id;
     assignedRoleIdCounts.set(roleId, (assignedRoleIdCounts.get(roleId) || 0) + 1);
   });
-  
+
   const unassignedRoleIds = new Set<string>();
-  roles.forEach(role => {
+  managedRoles.forEach(role => {
     // Check if all capacity slots of this role were assigned
     const assignedCount = assignedRoleIdCounts.get(role.id) || 0;
     if (assignedCount < role.capacity) {
@@ -275,21 +280,21 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
 
   // Calculate satisfaction score
   const satisfactionScore =
-    result.reduce((sum, a) => sum + (a.preferenceRank || roles.length + 1), 0) /
+    result.reduce((sum, a) => sum + (a.preferenceRank || managedRoles.length + 1), 0) /
     result.length;
 
   // Count and check roles per student for reporting
   const rolesPerStudent = validPreferences.map(student => {
     const studentAssignments = result.filter(a => a.userId === student.userId);
     const roleIds = new Set(studentAssignments.map(a => a.roleId));
-    
+
     // Verify no duplicate role assignments
     if (roleIds.size !== studentAssignments.length) {
       console.warn(`Warning: ${student.userName} has duplicate role assignments!`);
     }
-    
-    return { 
-      name: student.userName, 
+
+    return {
+      name: student.userName,
       count: studentAssignments.length,
       distinctRoles: roleIds.size
     };
@@ -297,19 +302,19 @@ export function allocateRoles(preferences: Preference[]): AllocationResult {
 
   // Debug: Log final results
   console.log("\n=== 配分結果 ===");
-  console.log(`配分された役割の総数: ${result.length}`);
-  console.log(`各学生の役割数:`);
-  rolesPerStudent.forEach(({name, count, distinctRoles}) => {
-    console.log(`- ${name}: ${count}個の役割 (異なる役割: ${distinctRoles})`);
+  console.log(`配分された役職の総数: ${result.length}`);
+  console.log(`各学生の役職数:`);
+  rolesPerStudent.forEach(({ name, count, distinctRoles }) => {
+    console.log(`- ${name}: ${count}個の役職 (異なる役職: ${distinctRoles})`);
   });
-  
-  console.log(`未配分の役割数: ${unassignedRoleIds.size}`);
+
+  console.log(`未配分の役職数: ${unassignedRoleIds.size}`);
   console.log(`満足度スコア: ${satisfactionScore.toFixed(2)}`);
 
   if (unassignedRoleIds.size > 0) {
-    console.log("\n未配分の役割:");
+    console.log("\n未配分の役職:");
     Array.from(unassignedRoleIds).forEach((roleId) => {
-      const role = roles.find((r) => r.id === roleId);
+      const role = managedRoles.find((r) => r.id === roleId);
       if (role) {
         const assignedCount = result.filter((a) => a.roleId === roleId).length;
         console.log(

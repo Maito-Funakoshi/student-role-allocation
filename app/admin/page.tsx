@@ -268,7 +268,7 @@ export default function Admin() {
       await clearAllAssignments();
 
       // Run allocation algorithm
-      const result = await allocateRoles(preferences);
+      const result = await allocateRoles(preferences, managedRoles);
 
       // Check for incomplete allocation
       if (
