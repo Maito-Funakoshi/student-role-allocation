@@ -187,6 +187,8 @@ export default function Preferences() {
     try {
       await deletePreferences(user.uid); // データベースから希望を削除
       setSelectedRoles([]); // UIの状態をリセット
+      const rolesData = await getRoles();
+      setAvailableRoles(rolesData);
       setDeleted(true);
       setTimeout(() => setDeleted(false), 3000);
     } catch (err: any) {
@@ -213,7 +215,7 @@ export default function Preferences() {
           <div className="px-4 py-5 sm:px-6">
             <h1 className="text-2xl font-bold text-gray-900">役職の希望調査</h1>
             <p className="mt-1 max-w-2xl text-sm text-gray-500">
-              希望する役職を優先順位の高い順にドラッグして並べ替えてください（最も希望する役職を一番上に）
+              希望する役職を3つ以上選択し、ドラッグして上から優先順位の高い順に並べ替えてください
             </p>
           </div>
 
@@ -227,6 +229,11 @@ export default function Preferences() {
             {saved && (
               <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
                 希望が正常に保存されました！
+              </div>
+            )}
+            {deleted && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                希望が削除されました
               </div>
             )}
 
