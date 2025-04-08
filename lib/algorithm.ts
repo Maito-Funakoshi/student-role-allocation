@@ -290,7 +290,7 @@ function performAllocation(validPreferences: Preference[], managedRoles: typeof 
       preferenceRank,
       timestamp: new Date(),
     };
-  });
+  }).sort((a, b) => a.userName.localeCompare(b.userName)); // userNameでソート;
 
   // Calculate unassigned roles
   const assignedRoleIdCounts = new Map<string, number>();

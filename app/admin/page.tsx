@@ -444,12 +444,9 @@ export default function Admin() {
             </div>
 
             <div className="mb-8">
-              <h2 className="text-lg font-medium text-gray-900">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
                 役職の配分結果 ({assignments.length})
               </h2>
-              <p className="mt-1 max-w-2xl text-xs text-gray-500 mb-4">
-                再読み込みすると整理されます
-              </p>
 
               {assignments.length === 0 ? (
                 <p className="text-gray-500 italic">
