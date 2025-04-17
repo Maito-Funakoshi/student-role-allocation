@@ -311,7 +311,6 @@ export default function Admin() {
         `配分された学生数: ${result.assignments.length}人`,
         `未配分の学生数: ${result.unassignedUsers.length}人`,
         `未配分の役職数: ${result.unassignedRoles.length}個`,
-        `満足度スコア: ${result.satisfactionScore.toFixed(2)} （値が小さいほど良い）`,
         ``,
         `※コンソールに詳細なデバッグ情報を出力しています。`,
       ].join("\n");

@@ -28,9 +28,22 @@ export interface Assignment {
   timestamp: Date
 }
 
+export interface SatisfactionData {
+  name: string
+  count: number
+  distinctRoles: number
+  assignments: {
+    role: string;
+    preferenceRank: string | number;
+  } []
+  dissatisfactionScore: number
+}
+
 export interface AllocationResult {
   assignments: Assignment[]
   unassignedUsers: string[]
   unassignedRoles: string[]
   satisfactionScore: number // A measure of how well preferences were satisfied
+  maxStudentDissatisfaction: number // 新しい評価指標を追加
+  studentSatisfactionData: SatisfactionData[]
 }
